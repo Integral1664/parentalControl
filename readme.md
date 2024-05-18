@@ -1,0 +1,1 @@
+# Start MySql server (configuration in server.js file) before you run 'node server.js'
