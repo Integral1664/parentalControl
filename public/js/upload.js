@@ -84,7 +84,7 @@ function upload(selector, infoSelector, dropZoneEl, options = {}) {
     const uploadHandler = () => {
         status.classList.remove('abort');
         status.innerText = '';
-        progressBar.closest('.progress__container').classList.remove('abort')   
+        progressBar.closest('.progress__container').classList.remove('abort')
         clear.disabled = true
         clear.style.display = 'none';
 
@@ -134,8 +134,52 @@ function upload(selector, infoSelector, dropZoneEl, options = {}) {
         });
 
         xhr.open('POST', 'http://localhost:3201/upload');
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    console.log(response.message)
+                } else {
+                    console.error('Error:', xhr.status, xhr.statusText);
+                    console.log('Error' + response.statusText)
+                }
+            }
+        };
         xhr.send(formData);
 
+        // Set up EventSource to listen for server-sent events
+        const eventSource = new EventSource('/events');
+        eventSource.onmessage = function (event) {
+            const frameData = JSON.parse(event.data);
+            if (progressBar.classList.contains('abort')) {
+                progressBar.classList.remove('abort')
+            }            
+
+            let percents = Math.ceil((frameData.current / frameData.duration) * 100)
+            progressBar.style.width = percents + '%';
+            status.innerText = `Анализ: ${percents}%`;
+            toServer.disabled = true;
+
+        };
+
+        eventSource.addEventListener('end', function (event) {
+            status.innerText = 'Анализ завершен!'
+            status.classList.remove('abort')
+            toServer.disabled = true
+            eventSource.close();
+        });
+
+        eventSource.onerror = function (event) {
+            console.error('EventSource error:', event);
+            progressBar.style.width = 0 + '%';
+            progressBar.closest('.progress__container').classList.add('abort')
+            status.classList.add('abort');
+            status.innerText = 'Ошибка: попробуйте снова';
+            clear.disabled = false
+            toServer.disabled = false
+            clear.style.display = 'block';
+            eventSource.close();
+        };
     }
 
     dropZone.addEventListener("dragenter", function (e) {
