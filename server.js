@@ -102,12 +102,15 @@ app.use((req, res, next) => {
 // Function to extract frames at 1-second intervals and process them
 async function extractAndProcessFrames(inputFilePath, outputDir, res) {
     const duration = await getVideoDuration(inputFilePath);
-    for (let seconds = 0; seconds < duration; seconds++) {
+    let seconds = 0
+    while (seconds < duration) {
         const jpegFramePath = await extractAndProcessFrameAtTime(inputFilePath, outputDir, seconds);
         const result = await handleFrame(jpegFramePath);
         result.duration = Math.ceil(duration);
         result.current = seconds;
+
         sendUpdateToClients(result);
+        seconds = seconds + 30;
     }
     fs.rm(outputDir, { recursive: true, force: true }, (err) => {
         if (err) {
@@ -188,9 +191,7 @@ function convertAndCompressFrame(framePath) {
 
 // Function to handle the extracted frame
 async function handleFrame(framePath) {
-    // Perform your processing on the frame here
-    // Example: Read the frame and perform some analysis
-    // For demonstration, let's just return the frame path
+    
     return { current: framePath.current, duration: framePath.duration, message: 'Frame processed' };
 }
 

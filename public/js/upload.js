@@ -107,12 +107,6 @@ function upload(selector, infoSelector, dropZoneEl, options = {}) {
             }
         });
 
-        xhr.addEventListener('load', function () {
-            status.innerText = 'Загрузка завершена!'
-            status.classList.remove('abort')
-            toServer.disabled = true
-        });
-
         xhr.addEventListener('error', function () {
             progressBar.style.width = 0 + '%';
             progressBar.closest('.progress__container').classList.add('abort')
@@ -134,17 +128,7 @@ function upload(selector, infoSelector, dropZoneEl, options = {}) {
         });
 
         xhr.open('POST', 'http://localhost:3201/upload');
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                if (xhr.status === 200) {
-                    const response = JSON.parse(xhr.responseText);
-                    console.log(response.message)
-                } else {
-                    console.error('Error:', xhr.status, xhr.statusText);
-                    console.log('Error' + response.statusText)
-                }
-            }
-        };
+
         xhr.send(formData);
 
         // Set up EventSource to listen for server-sent events
@@ -163,7 +147,10 @@ function upload(selector, infoSelector, dropZoneEl, options = {}) {
         };
 
         eventSource.addEventListener('end', function (event) {
+            console.log(12)
             status.innerText = 'Анализ завершен!'
+            progressBar.style.width = 100 + '%';
+
             status.classList.remove('abort')
             toServer.disabled = true
             eventSource.close();
